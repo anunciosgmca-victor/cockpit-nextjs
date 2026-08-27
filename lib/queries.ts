@@ -70,6 +70,11 @@ export async function updateTopic(id: string, patch: Partial<{ name: string; str
   if (error) throw error;
 }
 
+export async function deleteTopic(id: string) {
+  const { error } = await supabase.from('topics').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ---------- kpis ----------
 export async function addKpi(topic_id: string, input: { name: string; unit: string; goal: number; current: number; source: string }) {
   const { error } = await supabase.from('kpis').insert({ topic_id, ...input });

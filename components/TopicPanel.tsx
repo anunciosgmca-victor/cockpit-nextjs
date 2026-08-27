@@ -46,6 +46,14 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
     await onRefresh();
   };
 
+  const deleteTopic = async () => {
+    if (!window.confirm(`Excluir a pauta "${topic.name}"? Isso também apaga seus indicadores, participantes, definições e encaminhamentos. Essa ação não pode ser desfeita.`)) return;
+    const res = await trySave(() => q.deleteTopic(topic.id));
+    if (!res.ok) return;
+    onClose();
+    await onRefresh();
+  };
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="panel scrollbar" onClick={(e) => e.stopPropagation()}>
@@ -55,7 +63,10 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             <div className="panel-title">{topic.name}</div>
             <div className="muted" style={{ marginTop: 4 }}>Estratégia: <span style={{ color: 'var(--lime)' }}>{topic.strategy}</span></div>
           </div>
-          <button className="close-x" onClick={onClose}>✕</button>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={deleteTopic}>Excluir pauta</button>
+            <button className="close-x" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         <div className="subtabs">
