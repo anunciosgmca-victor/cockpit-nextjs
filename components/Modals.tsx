@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { Topic, Lever } from '@/lib/types';
 import { kpiStatus, todayISO } from '@/lib/types';
-import { StatusPill } from '@/components/shared';
+import { StatusPill, trySave } from '@/components/shared';
 import * as q from '@/lib/queries';
 
 export function NewTopicModal({ levers, onClose, onSaved }: { levers: Lever[]; onClose: () => void; onSaved: () => Promise<void> }) {
@@ -24,7 +24,7 @@ export function NewTopicModal({ levers, onClose, onSaved }: { levers: Lever[]; o
         <div className="field"><label>Estratégia</label><input value={f.strategy} onChange={(e) => setF({ ...f, strategy: e.target.value })} placeholder="Ex: Programa de afiliados" /></div>
         <div className="field"><label>Objetivo</label><textarea rows={2} value={f.objective} onChange={(e) => setF({ ...f, objective: e.target.value })}></textarea></div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className="btn btn-primary" disabled={!f.name || !f.lever_id} onClick={async () => { await q.addTopic(f); onClose(); await onSaved(); }}>Criar pauta</button>
+          <button className="btn btn-primary" disabled={!f.name || !f.lever_id} onClick={async () => { const res = await trySave(() => q.addTopic(f)); if (!res.ok) return; onClose(); await onSaved(); }}>Criar pauta</button>
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
         </div>
       </div>
@@ -39,7 +39,7 @@ export function NewLeverInline({ onSaved }: { onSaved: () => Promise<void> }) {
   return (
     <div style={{ display: 'flex', gap: 8 }}>
       <input style={{ background: 'var(--card)', border: '1px solid var(--card-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--ink)' }} placeholder="Nome da alavanca" value={name} onChange={(e) => setName(e.target.value)} />
-      <button className="btn btn-primary btn-sm" onClick={async () => { if (!name) return; await q.addLever(name); setName(''); setOpen(false); await onSaved(); }}>Salvar</button>
+      <button className="btn btn-primary btn-sm" onClick={async () => { if (!name) return; const res = await trySave(() => q.addLever(name)); if (!res.ok) return; setName(''); setOpen(false); await onSaved(); }}>Salvar</button>
       <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>✕</button>
     </div>
   );

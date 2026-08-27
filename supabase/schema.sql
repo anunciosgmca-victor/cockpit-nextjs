@@ -78,8 +78,9 @@ create table if not exists action_items (
 );
 
 -- ============================================================
--- RLS — qualquer usuário autenticado (sua equipe) lê e escreve tudo.
--- Simples e adequado para um cockpit de uso interno de um único time.
+-- RLS — o app não tem login, então usa a chave anon do Supabase.
+-- Liberado para leitura/escrita pública. Adequado apenas para uso
+-- interno com a URL não divulgada; não exponha publicamente.
 -- ============================================================
 alter table levers enable row level security;
 alter table topics enable row level security;
@@ -89,10 +90,10 @@ alter table meetings enable row level security;
 alter table topic_notes enable row level security;
 alter table action_items enable row level security;
 
-create policy "authenticated full access" on levers for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated full access" on topics for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated full access" on kpis for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated full access" on participants for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated full access" on meetings for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated full access" on topic_notes for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
-create policy "authenticated full access" on action_items for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "public full access" on levers for all using (true) with check (true);
+create policy "public full access" on topics for all using (true) with check (true);
+create policy "public full access" on kpis for all using (true) with check (true);
+create policy "public full access" on participants for all using (true) with check (true);
+create policy "public full access" on meetings for all using (true) with check (true);
+create policy "public full access" on topic_notes for all using (true) with check (true);
+create policy "public full access" on action_items for all using (true) with check (true);

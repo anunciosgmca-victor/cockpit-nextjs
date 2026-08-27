@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { Topic, Lever } from '@/lib/types';
 import { fmtDate, todayISO } from '@/lib/types';
-import { KpiBar, ActionRow, initials } from '@/components/shared';
+import { KpiBar, ActionRow, initials, trySave } from '@/components/shared';
 import * as q from '@/lib/queries';
 
 export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topic: Topic; levers: Lever[]; onClose: () => void; onRefresh: () => Promise<void> }) {
@@ -22,7 +22,8 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
     if (!decisionDraft) return;
     setBusy(true);
     try {
-      await q.upsertTopicNote({ topic_id: topic.id, meeting_id: null, decision: decisionDraft });
+      const res = await trySave(() => q.upsertTopicNote({ topic_id: topic.id, meeting_id: null, decision: decisionDraft }));
+      if (!res.ok) return;
       setDecisionDraft('');
       await onRefresh();
     } finally { setBusy(false); }
@@ -32,14 +33,16 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
     if (!newAction.desc) return;
     setBusy(true);
     try {
-      await q.addActionItem({ topic_id: topic.id, description: newAction.desc, responsible: newAction.responsible, deadline: newAction.deadline || null });
+      const res = await trySave(() => q.addActionItem({ topic_id: topic.id, description: newAction.desc, responsible: newAction.responsible, deadline: newAction.deadline || null }));
+      if (!res.ok) return;
       setNewAction({ desc: '', responsible: '', deadline: '' });
       await onRefresh();
     } finally { setBusy(false); }
   };
 
   const changeStatus = async (id: string, status: string) => {
-    await q.updateActionStatus(id, status);
+    const res = await trySave(() => q.updateActionStatus(id, status));
+    if (!res.ok) return;
     await onRefresh();
   };
 
@@ -75,7 +78,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
                   <div style={{ fontSize: 12.5 }}>{p.name} <span className="muted">· {p.role}{p.email ? ' · ' + p.email : ''}</span></div>
                   <button
                     title="Remover participante"
-                    onClick={async () => { if (window.confirm('Remover ' + p.name + ' desta pauta?')) { await q.removeParticipant(p.id); await onRefresh(); } }}
+                    onClick={async () => { if (window.confirm('Remover ' + p.name + ' desta pauta?')) { const res = await trySave(() => q.removeParticipant(p.id)); if (res.ok) await onRefresh(); } }}
                     style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', fontSize: 13, padding: '0 2px', lineHeight: 1, cursor: 'pointer' }}
                   >✕</button>
                 </div>
@@ -87,7 +90,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             ) : (
               <AddPersonForm
                 onCancel={() => setShowAddPerson(false)}
-                onSave={async (p) => { await q.addParticipant(topic.id, p); setShowAddPerson(false); await onRefresh(); }}
+                onSave={async (p) => { const res = await trySave(() => q.addParticipant(topic.id, p)); if (!res.ok) return; setShowAddPerson(false); await onRefresh(); }}
               />
             )}
             <div className="divider"></div>
@@ -108,8 +111,10 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
                   const patch: any = { goal };
                   if (current !== k.current) patch.previous = k.current;
                   if (current !== k.current) patch.current = current;
-                  await q.updateKpi(k.id, patch);
+                  const res = await trySave(() => q.updateKpi(k.id, patch));
+                  if (!res.ok) return false;
                   await onRefresh();
+                  return true;
                 }} />
               </div>
             ))}
@@ -117,7 +122,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             {!showAddKpi ? (
               <button className="link-btn" onClick={() => setShowAddKpi(true)}>+ Adicionar indicador</button>
             ) : (
-              <AddKpiForm onCancel={() => setShowAddKpi(false)} onSave={async (k) => { await q.addKpi(topic.id, k); setShowAddKpi(false); await onRefresh(); }} />
+              <AddKpiForm onCancel={() => setShowAddKpi(false)} onSave={async (k) => { const res = await trySave(() => q.addKpi(topic.id, k)); if (!res.ok) return; setShowAddKpi(false); await onRefresh(); }} />
             )}
           </div>
         )}
@@ -175,7 +180,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
   );
 }
 
-function InlineKpiEdit({ kpi, onSave }: { kpi: any; onSave: (goal: number, current: number) => Promise<void> }) {
+function InlineKpiEdit({ kpi, onSave }: { kpi: any; onSave: (goal: number, current: number) => Promise<boolean> }) {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState(kpi.current);
   const [goalVal, setGoalVal] = useState(kpi.goal);
@@ -197,7 +202,7 @@ function InlineKpiEdit({ kpi, onSave }: { kpi: any; onSave: (goal: number, curre
         <label style={{ fontSize: 11, color: 'var(--ink-dim)' }}>Meta</label>
         <input type="number" style={{ width: 100, background: 'var(--card)', border: '1px solid var(--card-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--ink)' }} value={goalVal} onChange={(e) => setGoalVal(e.target.value)} />
       </div>
-      <button className="btn btn-primary btn-sm" onClick={async () => { await onSave(Number(goalVal), Number(val)); setOpen(false); }}>Salvar</button>
+      <button className="btn btn-primary btn-sm" onClick={async () => { const ok = await onSave(Number(goalVal), Number(val)); if (ok) setOpen(false); }}>Salvar</button>
       <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Cancelar</button>
     </div>
   );

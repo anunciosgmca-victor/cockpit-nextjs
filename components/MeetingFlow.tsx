@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Topic, Lever, Meeting } from '@/lib/types';
-import { KpiBar, ActionRow } from '@/components/shared';
+import { KpiBar, ActionRow, trySave } from '@/components/shared';
 import * as q from '@/lib/queries';
 
 export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed, onRefresh }: {
@@ -23,7 +23,6 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
   const [noteId, setNoteId] = useState<string | undefined>(noteForMeeting?.id);
   const [newAction, setNewAction] = useState({ desc: '', responsible: '', deadline: '' });
   const [showClose, setShowClose] = useState(false);
-  const saveTimer = { current: null as any };
 
   useEffect(() => {
     const n = topic.topic_notes.find((n) => n.meeting_id === meeting.id);
@@ -32,14 +31,17 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
   }, [idx]);
 
   const commitDecision = async (val: string) => {
+    const previous = decision;
     setDecision(val);
-    const id = await q.upsertTopicNote({ id: noteId, topic_id: topic.id, meeting_id: meeting.id, decision: val });
-    if (!noteId) setNoteId(id);
+    const res = await trySave(() => q.upsertTopicNote({ id: noteId, topic_id: topic.id, meeting_id: meeting.id, decision: val }));
+    if (!res.ok) { setDecision(previous); return; }
+    if (!noteId) setNoteId(res.data);
   };
 
   const addAction = async () => {
     if (!newAction.desc) return;
-    await q.addActionItem({ topic_id: topic.id, note_id: noteId, meeting_id: meeting.id, description: newAction.desc, responsible: newAction.responsible, deadline: newAction.deadline || null });
+    const res = await trySave(() => q.addActionItem({ topic_id: topic.id, note_id: noteId, meeting_id: meeting.id, description: newAction.desc, responsible: newAction.responsible, deadline: newAction.deadline || null }));
+    if (!res.ok) return;
     setNewAction({ desc: '', responsible: '', deadline: '' });
     await onRefresh();
   };
@@ -74,7 +76,7 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
 
       <div className="section-label">Encaminhamentos desta pauta</div>
       {actionsForThisMeetingNote.map((a) => (
-        <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={async (id, status) => { await q.updateActionStatus(id, status); await onRefresh(); }} />
+        <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={async (id, status) => { const res = await trySave(() => q.updateActionStatus(id, status)); if (!res.ok) return; await onRefresh(); }} />
       ))}
       <div className="row3" style={{ marginTop: 6 }}>
         <div className="field"><input placeholder="Nova ação" value={newAction.desc} onChange={(e) => setNewAction({ ...newAction, desc: e.target.value })} /></div>
@@ -102,7 +104,7 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
           meeting={meeting}
           topics={topics}
           onClose={() => setShowClose(false)}
-          onClosed={async () => { await q.closeMeeting(meeting.id); setShowClose(false); onClosed(); }}
+          onClosed={async () => { const res = await trySave(() => q.closeMeeting(meeting.id)); if (!res.ok) return; setShowClose(false); onClosed(); }}
         />
       )}
     </div>

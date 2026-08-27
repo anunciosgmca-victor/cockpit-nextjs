@@ -78,3 +78,13 @@ export function ActionRow({ a, participants, topicName, onStatusChange }: { a: A
 export function initials(name: string) {
   return (name || '?').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 }
+
+export async function trySave<T>(fn: () => Promise<T>): Promise<{ ok: true; data: T } | { ok: false }> {
+  try {
+    return { ok: true, data: await fn() };
+  } catch (e: any) {
+    console.error(e);
+    alert('Não foi possível salvar: ' + (e?.message || 'erro desconhecido') + '\n\nVerifique sua conexão e tente novamente.');
+    return { ok: false };
+  }
+}

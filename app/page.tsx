@@ -66,8 +66,14 @@ export default function HomePage() {
 
   const handleStart = async () => {
     if (!activeMeeting) {
-      const id = await q.startMeeting();
-      await refresh();
+      try {
+        await q.startMeeting();
+        await refresh();
+      } catch (e: any) {
+        console.error(e);
+        alert('Não foi possível iniciar a reunião: ' + (e?.message || 'erro desconhecido'));
+        return;
+      }
     }
     setViewingMeeting(true);
   };
