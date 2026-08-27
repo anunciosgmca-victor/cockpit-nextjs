@@ -15,7 +15,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
   const [busy, setBusy] = useState(false);
   const lever = levers.find((l) => l.id === topic.lever_id);
 
-  const allActions = topic.topic_notes.flatMap((n) => n.action_items || []);
+  const allActions = topic.action_items;
   const openActions = allActions.filter((a) => a.status !== 'Concluído');
 
   const saveDefinicao = async () => {
@@ -168,7 +168,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
               <div className="history-entry" key={h.id}>
                 <div className="history-date">{fmtDate(h.date)}</div>
                 {h.decision && <p style={{ margin: '0 0 6px', fontSize: 13 }}><strong>Definição:</strong> {h.decision}</p>}
-                {(h.action_items || []).map((a) => (
+                {topic.action_items.filter((a) => a.note_id === h.id).map((a) => (
                   <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} />
                 ))}
               </div>

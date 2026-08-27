@@ -7,7 +7,7 @@ import { fmtDate, todayISO, mailtoForAction } from '@/lib/types';
 export default function ConsolidatedActions({ topics }: { topics: Topic[] }) {
   const [filter, setFilter] = useState('todos');
   const allActions = topics.flatMap((t) =>
-    t.topic_notes.flatMap((n) => (n.action_items || []).map((a) => ({ ...a, topic: t.name, topicId: t.id, participants: t.participants })))
+    t.action_items.map((a) => ({ ...a, topic: t.name, topicId: t.id, participants: t.participants }))
   );
   const withEff = allActions.map((a) => {
     const overdue = a.deadline && a.deadline < todayISO() && a.status !== 'Concluído';

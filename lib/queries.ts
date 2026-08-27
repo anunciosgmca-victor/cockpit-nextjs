@@ -17,13 +17,15 @@ export async function fetchTopics(): Promise<Topic[]> {
       *,
       kpis(*),
       participants(*),
-      topic_notes(*, action_items(*))
+      topic_notes(*),
+      action_items(*)
     `)
     .order('created_at');
   if (error) throw error;
   return (data || []).map((t: any) => ({
     ...t,
     topic_notes: (t.topic_notes || []).sort((a: any, b: any) => (a.date < b.date ? 1 : -1)),
+    action_items: t.action_items || [],
   })) as Topic[];
 }
 

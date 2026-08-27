@@ -46,7 +46,7 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
     await onRefresh();
   };
 
-  const actionsForThisMeetingNote = (topic.topic_notes.find((n) => n.id === noteId)?.action_items) || [];
+  const actionsForThisMeetingNote = topic.action_items.filter((a) => a.note_id === noteId);
 
   return (
     <div className="meeting-shell">
@@ -114,7 +114,7 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
 function CloseMeetingModal({ meeting, topics, onClose, onClosed }: { meeting: Meeting; topics: Topic[]; onClose: () => void; onClosed: () => void }) {
   const notesThisMeeting = topics.map((t) => t.topic_notes.find((n) => n.meeting_id === meeting.id)).filter(Boolean) as any[];
   const withDecision = notesThisMeeting.filter((n) => n.decision);
-  const actionsThisMeeting = topics.flatMap((t) => t.topic_notes.filter((n) => n.meeting_id === meeting.id).flatMap((n) => n.action_items || []));
+  const actionsThisMeeting = topics.flatMap((t) => t.action_items.filter((a) => a.meeting_id === meeting.id));
   const actionsNoResp = actionsThisMeeting.filter((a) => !a.responsible);
   const actionsNoDeadline = actionsThisMeeting.filter((a) => !a.deadline);
 

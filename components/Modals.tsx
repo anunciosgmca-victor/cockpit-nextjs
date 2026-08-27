@@ -49,7 +49,7 @@ export function PrepareMeetingModal({ topics, onClose, onStart }: { topics: Topi
   const allKpis = topics.flatMap((t) => t.kpis.map((k) => ({ ...k, topic: t.name })));
   const critical = allKpis.filter((k) => kpiStatus(k) === 'critico');
   const attention = allKpis.filter((k) => kpiStatus(k) === 'atencao');
-  const allActions = topics.flatMap((t) => t.topic_notes.flatMap((n) => (n.action_items || []).map((a) => ({ ...a, topic: t.name }))));
+  const allActions = topics.flatMap((t) => t.action_items.map((a) => ({ ...a, topic: t.name })));
   const open = allActions.filter((a) => a.status !== 'Concluído');
   const overdue = open.filter((a) => a.deadline && a.deadline < todayISO());
   const priorityTopics = topics.filter((t) => t.kpis.some((k) => kpiStatus(k) !== 'ok')).slice(0, 5);

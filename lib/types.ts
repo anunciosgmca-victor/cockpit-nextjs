@@ -37,7 +37,6 @@ export type TopicNote = {
   meeting_id: string | null;
   date: string;
   decision: string;
-  action_items?: ActionItem[];
 };
 
 export type Topic = {
@@ -49,6 +48,7 @@ export type Topic = {
   kpis: Kpi[];
   participants: Participant[];
   topic_notes: TopicNote[];
+  action_items: ActionItem[];
 };
 
 export type Meeting = {

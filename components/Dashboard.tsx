@@ -9,14 +9,14 @@ export default function Dashboard({ topics, levers, lastMeeting }: { topics: Top
   const ok = allKpis.filter((k) => kpiStatus(k) === 'ok').length;
   const atencao = allKpis.filter((k) => kpiStatus(k) === 'atencao').length;
   const critico = allKpis.filter((k) => kpiStatus(k) === 'critico').length;
-  const allActions = topics.flatMap((t) => t.topic_notes.flatMap((n) => n.action_items || []));
+  const allActions = topics.flatMap((t) => t.action_items);
   const open = allActions.filter((a) => a.status !== 'Concluído');
   const overdue = open.filter((a) => a.deadline && a.deadline < todayISO());
   const pendingDefs = topics.filter((t) => t.kpis.some((k) => kpiStatus(k) !== 'ok') && !t.topic_notes[0]?.decision).length;
 
   const lastMeetingNotes = lastMeeting ? topics.map((t) => ({ topic: t.name, note: t.topic_notes.find((n) => n.meeting_id === lastMeeting.id) })).filter((x) => x.note) : [];
   const lastMeetingDecisions = lastMeetingNotes.filter((x) => x.note!.decision);
-  const lastMeetingActions = lastMeetingNotes.flatMap((x) => (x.note!.action_items || []).map((a) => ({ ...a, topic: x.topic })));
+  const lastMeetingActions = topics.flatMap((t) => t.action_items.filter((a) => a.meeting_id === lastMeeting?.id).map((a) => ({ ...a, topic: t.name })));
 
   return (
     <div>
@@ -63,7 +63,7 @@ export default function Dashboard({ topics, levers, lastMeeting }: { topics: Top
         <h3>Encaminhamentos em aberto</h3>
         {open.length === 0 && <div className="muted">Nenhum encaminhamento em aberto.</div>}
         {open.map((a) => {
-          const t = topics.find((t) => t.topic_notes.some((n) => (n.action_items || []).some((x) => x.id === a.id)));
+          const t = topics.find((t) => t.action_items.some((x) => x.id === a.id));
           const late = a.deadline && a.deadline < todayISO();
           return (
             <div className="list-row" key={a.id}>
