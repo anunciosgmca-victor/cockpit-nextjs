@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import * as q from '@/lib/queries';
 import type { Topic, Lever, Meeting } from '@/lib/types';
 import MatrixView from '@/components/MatrixView';
@@ -65,12 +64,6 @@ export default function HomePage() {
     })();
   }, [refresh]);
 
-  const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-  };
-
   const handleStart = async () => {
     if (!activeMeeting) {
       const id = await q.startMeeting();
@@ -101,7 +94,6 @@ export default function HomePage() {
               <button className={'tab ' + (screen === 'dashboard' ? 'active' : '')} onClick={() => setScreen('dashboard')}>Dashboard</button>
             </div>
           )}
-          <button className="btn btn-ghost btn-sm" onClick={handleSignOut}>Sair</button>
         </div>
       </div>
 
