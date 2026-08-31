@@ -40,7 +40,7 @@ export function KpiBar({ k }: { k: Kpi }) {
   );
 }
 
-export function ActionRow({ a, participants, topicName, onStatusChange }: { a: ActionItem; participants: Participant[]; topicName: string; onStatusChange: (id: string, status: string) => void }) {
+export function ActionRow({ a, participants, topicName, onStatusChange, onDelete }: { a: ActionItem; participants: Participant[]; topicName: string; onStatusChange: (id: string, status: string) => void; onDelete?: (id: string) => void }) {
   const colors: Record<string, string> = { 'Não iniciado': 'pill-neutro', 'Em andamento': 'pill-atencao', 'Concluído': 'pill-ok', 'Atrasado': 'pill-critico' };
   const overdue = a.deadline && a.deadline < new Date().toISOString().slice(0, 10) && a.status !== 'Concluído';
   const effStatus = overdue ? 'Atrasado' : a.status;
@@ -61,6 +61,13 @@ export function ActionRow({ a, participants, topicName, onStatusChange }: { a: A
           <option>Concluído</option>
           <option>Atrasado</option>
         </select>
+        {onDelete && (
+          <button
+            title="Excluir encaminhamento"
+            onClick={() => { if (window.confirm('Excluir este encaminhamento?')) onDelete(a.id); }}
+            style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', fontSize: 13, padding: '0 2px', lineHeight: 1, cursor: 'pointer' }}
+          >✕</button>
+        )}
       </div>
       <div className="action-meta">
         <span>Responsável: {a.responsible || '—'}</span>

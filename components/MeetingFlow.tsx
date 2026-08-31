@@ -76,7 +76,14 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
 
       <div className="section-label">Encaminhamentos desta pauta</div>
       {actionsForThisMeetingNote.map((a) => (
-        <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={async (id, status) => { const res = await trySave(() => q.updateActionStatus(id, status)); if (!res.ok) return; await onRefresh(); }} />
+        <ActionRow
+          key={a.id}
+          a={a}
+          participants={topic.participants}
+          topicName={topic.name}
+          onStatusChange={async (id, status) => { const res = await trySave(() => q.updateActionStatus(id, status)); if (!res.ok) return; await onRefresh(); }}
+          onDelete={async (id) => { const res = await trySave(() => q.deleteActionItem(id)); if (!res.ok) return; await onRefresh(); }}
+        />
       ))}
       <div className="row3" style={{ marginTop: 6 }}>
         <div className="field"><input placeholder="Nova ação" value={newAction.desc} onChange={(e) => setNewAction({ ...newAction, desc: e.target.value })} /></div>

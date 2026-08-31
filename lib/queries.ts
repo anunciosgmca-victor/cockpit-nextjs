@@ -142,3 +142,14 @@ export async function updateActionStatus(id: string, status: string) {
   const { error } = await supabase.from('action_items').update({ status }).eq('id', id);
   if (error) throw error;
 }
+
+export async function deleteActionItem(id: string) {
+  const { error } = await supabase.from('action_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- meetings (cont.) ----------
+export async function deleteMeeting(id: string) {
+  const { error } = await supabase.from('meetings').delete().eq('id', id);
+  if (error) throw error;
+}

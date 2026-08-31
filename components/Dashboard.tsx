@@ -2,9 +2,10 @@
 
 import type { Topic, Lever, Meeting } from '@/lib/types';
 import { kpiStatus, fmtDate, todayISO } from '@/lib/types';
-import { StatusPill } from '@/components/shared';
+import { StatusPill, trySave } from '@/components/shared';
+import * as q from '@/lib/queries';
 
-export default function Dashboard({ topics, levers, lastMeeting }: { topics: Topic[]; levers: Lever[]; lastMeeting: Meeting | null }) {
+export default function Dashboard({ topics, levers, lastMeeting, onRefresh }: { topics: Topic[]; levers: Lever[]; lastMeeting: Meeting | null; onRefresh: () => Promise<void> }) {
   const allKpis = topics.flatMap((t) => t.kpis);
   const ok = allKpis.filter((k) => kpiStatus(k) === 'ok').length;
   const atencao = allKpis.filter((k) => kpiStatus(k) === 'atencao').length;
@@ -17,6 +18,14 @@ export default function Dashboard({ topics, levers, lastMeeting }: { topics: Top
   const lastMeetingNotes = lastMeeting ? topics.map((t) => ({ topic: t.name, note: t.topic_notes.find((n) => n.meeting_id === lastMeeting.id) })).filter((x) => x.note) : [];
   const lastMeetingDecisions = lastMeetingNotes.filter((x) => x.note!.decision);
   const lastMeetingActions = topics.flatMap((t) => t.action_items.filter((a) => a.meeting_id === lastMeeting?.id).map((a) => ({ ...a, topic: t.name })));
+
+  const deleteLastMeetingSummary = async () => {
+    if (!lastMeeting) return;
+    if (!window.confirm('Excluir o resumo desta reunião do dashboard? As definições e encaminhamentos já registrados continuam no histórico de cada pauta.')) return;
+    const res = await trySave(() => q.deleteMeeting(lastMeeting.id));
+    if (!res.ok) return;
+    await onRefresh();
+  };
 
   return (
     <div>
@@ -34,7 +43,10 @@ export default function Dashboard({ topics, levers, lastMeeting }: { topics: Top
 
       {lastMeeting && (
         <div className="dash-section">
-          <h3>Resumo da última reunião · {fmtDate(lastMeeting.date)}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0 }}>Resumo da última reunião · {fmtDate(lastMeeting.date)}</h3>
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={deleteLastMeetingSummary}>Excluir resumo</button>
+          </div>
           <div className="section-label">Definições</div>
           {lastMeetingDecisions.length === 0 && <div className="muted">Nenhuma definição registrada.</div>}
           {lastMeetingDecisions.map((d, i) => <div className="list-row" key={i}><span>{d.topic}</span><span className="muted" style={{ textAlign: 'right', maxWidth: '60%' }}>{d.note!.decision}</span></div>)}

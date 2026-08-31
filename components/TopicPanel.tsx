@@ -46,6 +46,12 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
     await onRefresh();
   };
 
+  const deleteAction = async (id: string) => {
+    const res = await trySave(() => q.deleteActionItem(id));
+    if (!res.ok) return;
+    await onRefresh();
+  };
+
   const deleteTopic = async () => {
     if (!window.confirm(`Excluir a pauta "${topic.name}"? Isso também apaga seus indicadores, participantes, definições e encaminhamentos. Essa ação não pode ser desfeita.`)) return;
     const res = await trySave(() => q.deleteTopic(topic.id));
@@ -108,7 +114,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             <div className="section-label">Pendências abertas</div>
             {openActions.length === 0 && <div className="muted">Nenhuma pendência em aberto para esta pauta.</div>}
             {openActions.map((a) => (
-              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} />
+              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} />
             ))}
           </div>
         )}
@@ -157,7 +163,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             <div className="section-label">Todos os encaminhamentos</div>
             {allActions.length === 0 && <div className="muted">Nenhum encaminhamento criado para esta pauta ainda.</div>}
             {allActions.map((a) => (
-              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} />
+              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} />
             ))}
           </div>
         )}
@@ -180,7 +186,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
                 <div className="history-date">{fmtDate(h.date)}</div>
                 {h.decision && <p style={{ margin: '0 0 6px', fontSize: 13 }}><strong>Definição:</strong> {h.decision}</p>}
                 {topic.action_items.filter((a) => a.note_id === h.id).map((a) => (
-                  <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} />
+                  <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} />
                 ))}
               </div>
             ))}

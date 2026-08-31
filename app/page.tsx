@@ -123,7 +123,7 @@ export default function HomePage() {
           onRefresh={refresh}
         />
       ) : (
-        <Dashboard topics={topics} levers={levers} lastMeeting={lastMeeting} />
+        <Dashboard topics={topics} levers={levers} lastMeeting={lastMeeting} onRefresh={refresh} />
       )}
 
       {openTopic && <TopicPanel topic={openTopic} levers={levers} onClose={() => setOpenTopicId(null)} onRefresh={refresh} />}
