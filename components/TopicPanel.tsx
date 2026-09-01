@@ -13,6 +13,8 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
   const [showAddKpi, setShowAddKpi] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [editingTopic, setEditingTopic] = useState(false);
+  const [topicDraft, setTopicDraft] = useState({ name: topic.name, lever_id: topic.lever_id, strategy: topic.strategy, objective: topic.objective });
   const lever = levers.find((l) => l.id === topic.lever_id);
 
   const allActions = topic.action_items;
@@ -52,6 +54,13 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
     await onRefresh();
   };
 
+  const editAction = async (id: string, patch: { description: string; responsible: string; deadline: string | null }) => {
+    const res = await trySave(() => q.updateActionItem(id, patch));
+    if (!res.ok) return false;
+    await onRefresh();
+    return true;
+  };
+
   const deleteTopic = async () => {
     if (!window.confirm(`Excluir a pauta "${topic.name}"? Isso também apaga seus indicadores, participantes, definições e encaminhamentos. Essa ação não pode ser desfeita.`)) return;
     const res = await trySave(() => q.deleteTopic(topic.id));
@@ -60,16 +69,45 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
     await onRefresh();
   };
 
+  const saveTopicEdit = async () => {
+    if (!topicDraft.name || !topicDraft.lever_id) return;
+    setBusy(true);
+    try {
+      const res = await trySave(() => q.updateTopic(topic.id, topicDraft));
+      if (!res.ok) return;
+      setEditingTopic(false);
+      await onRefresh();
+    } finally { setBusy(false); }
+  };
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="panel scrollbar" onClick={(e) => e.stopPropagation()}>
         <div className="panel-head">
-          <div>
-            <div className="badge-lever">{lever ? lever.name : '—'}</div>
-            <div className="panel-title">{topic.name}</div>
-            <div className="muted" style={{ marginTop: 4 }}>Estratégia: <span style={{ color: 'var(--lime)' }}>{topic.strategy}</span></div>
-          </div>
+          {editingTopic ? (
+            <div style={{ flex: 1 }}>
+              <div className="field"><label>Alavanca</label>
+                <select value={topicDraft.lever_id} onChange={(e) => setTopicDraft({ ...topicDraft, lever_id: e.target.value })}>
+                  {levers.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
+              <div className="field"><label>Nome da pauta</label><input value={topicDraft.name} onChange={(e) => setTopicDraft({ ...topicDraft, name: e.target.value })} /></div>
+              <div className="field"><label>Estratégia</label><input value={topicDraft.strategy} onChange={(e) => setTopicDraft({ ...topicDraft, strategy: e.target.value })} /></div>
+              <div className="field"><label>Objetivo</label><textarea rows={2} value={topicDraft.objective} onChange={(e) => setTopicDraft({ ...topicDraft, objective: e.target.value })}></textarea></div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button className="btn btn-primary btn-sm" disabled={busy || !topicDraft.name} onClick={saveTopicEdit}>Salvar pauta</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setTopicDraft({ name: topic.name, lever_id: topic.lever_id, strategy: topic.strategy, objective: topic.objective }); setEditingTopic(false); }}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="badge-lever">{lever ? lever.name : '—'}</div>
+              <div className="panel-title">{topic.name}</div>
+              <div className="muted" style={{ marginTop: 4 }}>Estratégia: <span style={{ color: 'var(--lime)' }}>{topic.strategy}</span></div>
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            {!editingTopic && <button className="btn btn-ghost btn-sm" onClick={() => setEditingTopic(true)}>Editar pauta</button>}
             <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={deleteTopic}>Excluir pauta</button>
             <button className="close-x" onClick={onClose}>✕</button>
           </div>
@@ -114,7 +152,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             <div className="section-label">Pendências abertas</div>
             {openActions.length === 0 && <div className="muted">Nenhuma pendência em aberto para esta pauta.</div>}
             {openActions.map((a) => (
-              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} />
+              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} onEdit={editAction} />
             ))}
           </div>
         )}
@@ -163,7 +201,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
             <div className="section-label">Todos os encaminhamentos</div>
             {allActions.length === 0 && <div className="muted">Nenhum encaminhamento criado para esta pauta ainda.</div>}
             {allActions.map((a) => (
-              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} />
+              <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} onEdit={editAction} />
             ))}
           </div>
         )}
@@ -186,7 +224,7 @@ export default function TopicPanel({ topic, levers, onClose, onRefresh }: { topi
                 <div className="history-date">{fmtDate(h.date)}</div>
                 {h.decision && <p style={{ margin: '0 0 6px', fontSize: 13 }}><strong>Definição:</strong> {h.decision}</p>}
                 {topic.action_items.filter((a) => a.note_id === h.id).map((a) => (
-                  <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} />
+                  <ActionRow key={a.id} a={a} participants={topic.participants} topicName={topic.name} onStatusChange={changeStatus} onDelete={deleteAction} onEdit={editAction} />
                 ))}
               </div>
             ))}

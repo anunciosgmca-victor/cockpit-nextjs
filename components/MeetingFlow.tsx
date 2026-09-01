@@ -83,6 +83,7 @@ export default function MeetingFlow({ meeting, topics, levers, onExit, onClosed,
           topicName={topic.name}
           onStatusChange={async (id, status) => { const res = await trySave(() => q.updateActionStatus(id, status)); if (!res.ok) return; await onRefresh(); }}
           onDelete={async (id) => { const res = await trySave(() => q.deleteActionItem(id)); if (!res.ok) return; await onRefresh(); }}
+          onEdit={async (id, patch) => { const res = await trySave(() => q.updateActionItem(id, patch)); if (!res.ok) return false; await onRefresh(); return true; }}
         />
       ))}
       <div className="row3" style={{ marginTop: 6 }}>

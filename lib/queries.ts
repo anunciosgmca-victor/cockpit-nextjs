@@ -65,7 +65,7 @@ export async function addTopic(input: { lever_id: string; name: string; strategy
   if (error) throw error;
 }
 
-export async function updateTopic(id: string, patch: Partial<{ name: string; strategy: string; objective: string }>) {
+export async function updateTopic(id: string, patch: Partial<{ name: string; strategy: string; objective: string; lever_id: string }>) {
   const { error } = await supabase.from('topics').update(patch).eq('id', id);
   if (error) throw error;
 }
@@ -140,6 +140,11 @@ export async function addActionItem(input: { topic_id: string; note_id?: string 
 
 export async function updateActionStatus(id: string, status: string) {
   const { error } = await supabase.from('action_items').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateActionItem(id: string, patch: Partial<{ description: string; responsible: string; deadline: string | null }>) {
+  const { error } = await supabase.from('action_items').update(patch).eq('id', id);
   if (error) throw error;
 }
 
