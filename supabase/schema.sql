@@ -6,11 +6,15 @@
 create extension if not exists "pgcrypto";
 
 -- ALAVANCAS -----------------------------------------------------
+-- "workspace" separa os dados de cada instância do app (ex: '/' vs
+-- '/grupoordos') dentro do mesmo banco/projeto Supabase.
 create table if not exists levers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  workspace text not null default 'default',
   created_at timestamptz not null default now()
 );
+create index if not exists levers_workspace_idx on levers(workspace);
 
 -- PAUTAS ----------------------------------------------------------
 create table if not exists topics (
@@ -19,8 +23,10 @@ create table if not exists topics (
   name text not null,
   strategy text default '',
   objective text default '',
+  workspace text not null default 'default',
   created_at timestamptz not null default now()
 );
+create index if not exists topics_workspace_idx on topics(workspace);
 
 -- INDICADORES -------------------------------------------------------
 create table if not exists kpis (
@@ -51,8 +57,10 @@ create table if not exists meetings (
   date date not null default current_date,
   status text not null default 'aberta', -- aberta | fechada
   closed_at timestamptz,
+  workspace text not null default 'default',
   created_at timestamptz not null default now()
 );
+create index if not exists meetings_workspace_idx on meetings(workspace);
 
 -- DEFINIÇÕES / NOTAS DE PAUTA (histórico) ----------------------------
 create table if not exists topic_notes (

@@ -71,21 +71,55 @@ npm run dev
 ```
 Abra http://localhost:3000
 
+## Instância extra: /grupoordos (tema vermelho)
+
+Além da tela principal (`/`), o projeto tem uma segunda instância completa em
+**`/grupoordos`** — mesmo layout e funcionalidades, só que com a cor de
+destaque vermelha em vez de lime. Ela usa o **mesmo Supabase** da instância
+principal (o mesmo `.env.local`/deploy na Vercel já dá acesso); os dados de
+cada instância ficam separados por uma coluna `workspace` nas tabelas
+`levers`, `topics` e `meetings` — tudo que existe hoje continua marcado como
+`workspace = 'default'` e não é afetado.
+
+Para colocar essa instância no ar (no mesmo projeto Supabase que você já usa):
+
+1. No **SQL Editor** do Supabase, rode `supabase/migration_workspace.sql`
+   uma vez — ele adiciona a coluna `workspace` nas 3 tabelas (seguro rodar
+   de novo se precisar, é idempotente). Nada do que já existe se move ou se
+   perde; tudo continua em `workspace = 'default'`.
+2. (Opcional, para já nascer com os exemplos de fábrica) Rode
+   `supabase/seed_grupoordos.sql` — ele insere as mesmas 4 pautas de exemplo
+   (Indicação, ADS Online, Marca Pessoal, Marketing Estratégico), só que
+   marcadas como `workspace = 'grupoordos'`, sem tocar nos dados da
+   instância principal.
+3. Acesse `https://seu-site.vercel.app/grupoordos`.
+
+Se quiser criar outra instância (outro cliente, outra cor), o padrão é:
+`components/CockpitApp.tsx` (marca/tema por workspace), `app/<slug>/`
+(rota), `lib/workspace.ts` (nome do workspace por rota) e o bloco
+`.theme-<cor>` no fim de `app/globals.css`.
+
 ## Estrutura do projeto
 
 ```
 app/                  → páginas (Next.js App Router)
-  page.tsx            → tela principal (orquestra tudo)
+  page.tsx            → instância principal ("/")
+  grupoordos/          → instância "/grupoordos" (tema vermelho)
   login/               → tela de login (link mágico por e-mail)
-  dashboard/           → (dashboard é renderizado dentro de page.tsx)
-components/            → MatrixView, TopicPanel, MeetingFlow, Dashboard, modais
+  dashboard/           → (dashboard é renderizado dentro de CockpitApp)
+components/
+  CockpitApp.tsx        → app inteiro, reutilizado por todas as instâncias
+  MatrixView, TopicPanel, MeetingFlow, Dashboard, modais
 lib/
-  supabase/             → clientes Supabase (browser, servidor)
-  queries.ts            → todas as leituras/escritas no banco
+  supabase/             → cliente Supabase (browser)
+  workspace.ts           → qual workspace ('default' | 'grupoordos') está ativo, pela rota
+  queries.ts            → todas as leituras/escritas no banco (já filtradas por workspace)
   types.ts               → tipos e regras (status de indicador, mailto, etc.)
 supabase/
-  schema.sql              → estrutura do banco (rode primeiro)
-  seed.sql                 → dados de demonstração (opcional)
+  schema.sql              → estrutura do banco (rode primeiro, projeto novo)
+  seed.sql                 → dados de demonstração da instância principal (opcional)
+  migration_workspace.sql  → adiciona a coluna workspace a um projeto já existente
+  seed_grupoordos.sql      → dados de demonstração da instância /grupoordos (opcional)
 ```
 
 ## O que ainda não está incluso (próximos passos possíveis)
